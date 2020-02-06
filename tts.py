@@ -36,20 +36,26 @@ def main(key=None):
     for row in values:
         if row and len(row) > 1 and row[0] and row[1]:
             ctr = ctr + 1
-        else :
-            if ctr > start + 5 :
-                lecCtr = lecCtr + 1
-            for i in range(start,ctr) : 
-                category[i] = lecCtr
-            if ctr > start + 5 :
-                start = ctr
-    if ctr > start + 5 :
-        lecCtr = lecCtr + 1
-    for i in range(start,ctr) : 
-        category[i] = lecCtr
-    if ctr > start + 5 :
-        start = ctr
 
+    categoryCnt = int(ctr / 20)
+    if categoryCnt == 0 :
+        sys.exit()
+    categoryNum = int(ctr / categoryCnt)
+    categoryRem = ctr % categoryCnt
+
+    ctr = 0
+
+    for i in range (0, categoryRem) :
+        for j in range (0,categoryNum +1) :
+            category[ctr] = i
+            ctr = ctr + 1
+
+    for i in range (categoryRem, categoryCnt) :
+        for j in range (0,categoryNum) :
+            category[ctr] = i
+            ctr = ctr + 1
+
+        
     two_sec_pause = AudioSegment.silent(duration=2000)
     ctr = 0
     start = 0
