@@ -7,6 +7,7 @@ import os
 from apiclient import discovery
 from gtts import gTTS
 from pydub import AudioSegment
+from random import shuffle
 
 def main(key=None):
     discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
@@ -25,71 +26,62 @@ def main(key=None):
         spreadsheetId=spreadsheetId, range=sheetId + '!' + rangeName).execute()
     values = result.get('values', [])
 
-    lecCtr = 0
-    ctr = 0
-    start = 0
+    #permute the words
 
-    #categorize the words to lectures
-
-    category = {}
+    numberOfWords = 20
+    wordlist = []
 
     for row in values:
         if row and len(row) > 1 and row[0] and row[1]:
-            ctr = ctr + 1
+            wordlist.append(row)
+            
+    shuffle(wordlist)
 
-    categoryCnt = int(ctr / 20)
-    if categoryCnt == 0 :
-        sys.exit()
-    categoryNum = int(ctr / categoryCnt)
-    categoryRem = ctr % categoryCnt
-
-    ctr = 0
-
-    for i in range (0, categoryRem) :
-        for j in range (0,categoryNum +1) :
-            category[ctr] = i
-            ctr = ctr + 1
-
-    for i in range (categoryRem, categoryCnt) :
-        for j in range (0,categoryNum) :
-            category[ctr] = i
-            ctr = ctr + 1
-
+    categoryCnt = int(len(wordlist) / numberOfWords)
+    numberOfWords = int(len(wordlist) / categoryCnt)
+    
+    categoryRem = len(wordlist) % categoryCnt
         
     two_sec_pause = AudioSegment.silent(duration=2000)
     ctr = 0
-    start = 0
+    
+    finalSound = AudioSegment.silent(duration=500)
 
-    for row in values:
-        if row and len(row) > 1 and row[0] and row[1]:
-            print('%s, %s' % (row[0], row[1]))
+    for ger, eng in wordlist:
+        print('%s, %s' % (ger, eng))
+        ger = ger.replace('etw.', 'etwas ')
+        ger = ger.replace('jmdn.', 'jemanden ')
+        ger = ger.replace('jmdm.', 'jemandem ')
+        
+        eng = eng.replace('so.', 'someone ')
+        eng = eng.replace('sth.', 'something ')
+        
+        ttsEng = gTTS(eng, lang = 'en')
+        ttsEng.save('eng.mp3')
+        
+        ttsGer = gTTS(ger, lang = 'de')
+        ttsGer.save('ger.mp3')
+        
+        actEngSound = AudioSegment.from_mp3('eng.mp3')
+        actGerSound = AudioSegment.from_mp3('ger.mp3')
+        finalSound = finalSound + actEngSound + two_sec_pause + actGerSound + two_sec_pause
+
+        ctr = ctr + 1
+        #check need to export
+        num = int (ctr / numberOfWords)
+        
+        num = num * numberOfWords + min (num, categoryRem)
+        
+        if ctr > 0 and (ctr  == num or ctr == len(wordlist)):
+            print('%d', ctr)
+            finalSound.export('final_%d.mp3'%(int (ctr / numberOfWords)), format = "mp3")
+            #check need to start a new or not
             
-            row[0] = row[0].replace('etw.', 'etwas ')
-            row[0] = row[0].replace('jmdn.', 'jemanden ')
-            row[0] = row[0].replace('jmdm.', 'jemandem ')
-            
-            
-            row[1] = row[1].replace('so.', 'someone ')
-            row[1] = row[1].replace('sth.', 'something ')
-            
-            ttsEng = gTTS(row[1], lang = 'en')
-            ttsEng.save('eng_%d.mp3'%(ctr))
-            
-            ttsGer = gTTS(row[0], lang = 'de')
-            ttsGer.save('ger_%d.mp3'%(ctr))
-            
-            if ctr + 1 == len(category) or category[ctr] < category[ctr+1] :
+            if not ctr == len(wordlist) :
                 finalSound = AudioSegment.silent(duration=500)
-                
-                for i in range(start,ctr) :    
-                    actEngSound = AudioSegment.from_mp3('eng_%d.mp3'%(i))
-                    actGerSound = AudioSegment.from_mp3('ger_%d.mp3'%(i))
-                    finalSound = finalSound + actEngSound + two_sec_pause + actGerSound + two_sec_pause
-
-                finalSound.export('final_%d.mp3'%(category[ctr]), format = "mp3")        
-                start = ctr
-
-            ctr = ctr + 1
+        
+        
+        
         
     
 if __name__ == '__main__':
