@@ -89,6 +89,8 @@ def main(key=None):
             actGerSound = AudioSegment.from_mp3('ger.mp3')
             finalSound = finalSound + actGerSound + twoh_msec_pause
 
+        finalSound = finalSound + two_sec_pause
+
         ctr = ctr + 1
         #check need to export
         num = int (ctr / numberOfWords)
@@ -102,6 +104,8 @@ def main(key=None):
             
             if not ctr == len(wordlist) :
                 finalSound = AudioSegment.silent(duration=500)
+    os.remove("ger.mp3")
+    os.remove("eng.mp3")
     
 if __name__ == '__main__':
     from sys import argv
